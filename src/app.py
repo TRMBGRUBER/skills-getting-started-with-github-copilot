@@ -125,21 +125,21 @@ def get_student_activities(email: str):
         for p in activity["participants"]
         if isinstance(p, dict) and p["email"] == email
     ]
-    activity["participants"].append({"email": email, "level": level})
-    return {"message": f"Signed up {email} for {activity_name} as {level}"}
 
-
-@app.get("/activities")
-def get_activities():
-    return activities
-
-
-@app.get("/students/{email}/activities")
-def get_student_activities(email: str):
-    return [
-        {"activity": name, "level": p["level"]}
-        for name, activity in activities.items()
-        for p in activity["participants"]
+@app.get("/activities/participants")
+def get_activities_participants():
+    """Return all activities with their participants (email and level if available)"""
+    result = {}
+    for name, activity in activities.items():
+        participants = []
+        for p in activity["participants"]:
+            if isinstance(p, dict):
+                participants.append({"email": p["email"], "level": p.get("level")})
+            else:
+                participants.append({"email": p, "level": None})
+        result[name] = participants
+    return result
+    return result
         if isinstance(p, dict) and p["email"] == email
     ]
 
@@ -153,3 +153,18 @@ def get_student_activities_gruber():
         for p in activity["participants"]
         if isinstance(p, dict) and p["email"] == email
     ]
+
+
+@app.get("/activities/participants")
+def get_activities_participants():
+    """Return all activities with their participants (email and level if available)"""
+    result = {}
+    for name, activity in activities.items():
+        participants = []
+        for p in activity["participants"]:
+            if isinstance(p, dict):
+                participants.append({"email": p["email"], "level": p.get("level")})
+            else:
+                participants.append({"email": p, "level": None})
+        result[name] = participants
+    return result
