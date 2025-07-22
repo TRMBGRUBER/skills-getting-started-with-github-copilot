@@ -139,9 +139,6 @@ def get_activities_participants():
                 participants.append({"email": p, "level": None})
         result[name] = participants
     return result
-    return result
-        if isinstance(p, dict) and p["email"] == email
-    ]
 
 
 @app.get("/students/gruber.christian%40gmail.com/activities")
@@ -165,6 +162,9 @@ def get_activities_participants():
             if isinstance(p, dict):
                 participants.append({"email": p["email"], "level": p.get("level")})
             else:
+                participants.append({"email": p, "level": None})
+        result[name] = participants
+    return result
                 participants.append({"email": p, "level": None})
         result[name] = participants
     return result
