@@ -94,8 +94,8 @@ class ExperienceLevel(str, Enum):
 
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str, level: str):
-    """Sign up a student for an activity with experience level"""
+def signup_for_activity(activity_name: str, email: str, level: ExperienceLevel):
+    """Sign up a student for an activity with experience level (beginner, advanced, professional)"""
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -108,13 +108,28 @@ def signup_for_activity(activity_name: str, email: str, level: str):
         raise HTTPException(status_code=400, detail="Student is already signed up")
 
     # Add student with level
-    activity["participants"].append({"email": email, "level": level})
-    return {"message": f"Signed up {email} for {activity_name} as {level}"}
+    activity["participants"].append({"email": email, "level": level.value})
+    return {"message": f"Signed up {email} for {activity_name} as {level.value}"}
 
 
 @app.get("/activities")
 def get_activities():
-    return activities
+    # Return activities with participants as dicts (always include email and level)
+    result = {}
+    for name, activity in activities.items():
+        participants = []
+        for p in activity["participants"]:
+            if isinstance(p, dict):
+                participants.append({"email": p["email"], "level": p.get("level")})
+            else:
+                participants.append({"email": p, "level": None})
+        result[name] = {
+            "description": activity["description"],
+            "schedule": activity["schedule"],
+            "max_participants": activity["max_participants"],
+            "participants": participants
+        }
+    return result
 
 
 @app.get("/students/{email}/activities")
@@ -165,6 +180,9 @@ def get_activities_participants():
                 participants.append({"email": p, "level": None})
         result[name] = participants
     return result
-                participants.append({"email": p, "level": None})
-        result[name] = participants
-    return result
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("src.app:app", host="0.0.0.0", port=8000, reload=True)
+
