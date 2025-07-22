@@ -85,15 +85,18 @@ activities = {
 def root():
     return RedirectResponse(url="/static/index.html")
 
+# ...existing code...
 
-@app.get("/activities")
-def get_activities():
-    return activities
+from enum import Enum
 
+class ExperienceLevel(str, Enum):
+    beginner = "beginner"
+    advanced = "advanced"
+    professional = "professional"
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
+def signup_for_activity(activity_name: str, email: str, level: ExperienceLevel):
+    """Sign up a student for an activity with experience level (beginner, advanced, professional)"""
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -102,16 +105,51 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Validate student is not already signed up
-    if email in activity["participants"]:
+    if email in [p["email"] if isinstance(p, dict) else p for p in activity["participants"]]:
         raise HTTPException(status_code=400, detail="Student is already signed up")
 
-    # Add student
-    activity["participants"].append(email)
-    return {"message": f"Signed up {email} for {activity_name}"}
+    # Add student with validated level
+    activity["participants"].append({"email": email, "level": level.value})
+    return {"message": f"Signed up {email} for {activity_name} as {level.value}"}
+# ...existing code...
+
+@app.post("/activities/{activity_name}/signup")
+def signup_for_activity(activity_name: str, email: str, level: str):
+    """Sign up a student for an activity with experience level"""
+    # Validate activity exists
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    # Get the specific activity
+    activity = activities[activity_name]
+
+    # Validate student is not already signed up
+    if email in [p["email"] if isinstance(p, dict) else p for p in activity["participants"]]:
+        raise HTTPException(status_code=400, detail="Student is already signed up")
+
+    # Add student with level
+    activity["participants"].append({"email": email, "level": level})
+    return {"message": f"Signed up {email} for {activity_name} as {level}"}
+
+
+@app.get("/activities")
+def get_activities():
+    return activities
 
 
 @app.get("/students/{email}/activities")
 def get_student_activities(email: str):
+    return [
+        {"activity": name, "level": p["level"]}
+        for name, activity in activities.items()
+        for p in activity["participants"]
+        if isinstance(p, dict) and p["email"] == email
+    ]
+
+
+@app.get("/students/gruber.christian%40gmail.com/activities")
+def get_student_activities_gruber():
+    email = "gruber.christian@gmail.com"
     return [
         name for name, activity in activities.items()
         if email in activity["participants"]
